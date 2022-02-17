@@ -96,21 +96,6 @@ if __name__ == '__main__':
         
         count = 0
 
-        # Get minimum control distance
-        if gotMin == False:
-            if ids is not None:
-                for tag in ids:
-                    count = count + 1
-                    print(count, " tag detected (min)")
-                    
-            if count >= 2:
-                minDist, minImg = get_dist(img, ids, corners, newCamMtx)
-                print("Minimum Distance: ", minDist)
-                gotMin = True
-
-                cv.imshow("Min. Control Img", minImg)
-                cv.waitKey(0)
-
         # Get maximum control distance
         if gotMin == True:
             if gotMax == False:
@@ -126,6 +111,21 @@ if __name__ == '__main__':
 
                     cv.imshow("Max. Control Img", maxImg)
                     cv.waitKey(0)
+
+        # Get minimum control distance
+        if gotMin == False:
+            if ids is not None:
+                for tag in ids:
+                    count = count + 1
+                    print(count, " tag detected (min)")
+                    
+            if count >= 2:
+                minDist, minImg = get_dist(img, ids, corners, newCamMtx)
+                print("Minimum Distance: ", minDist)
+                gotMin = True
+
+                cv.imshow("Min. Control Img", minImg)
+                cv.waitKey(0)
                     
 
         # Get live output values
