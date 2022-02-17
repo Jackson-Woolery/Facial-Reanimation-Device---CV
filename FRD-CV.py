@@ -28,9 +28,36 @@ KD = np.load('CV_CameraCalibrationData.npz')
 K = KD['k']
 DIST = KD['dist']
 
+# Perform sub-pixel Aruco marker corner detection for increased accuracy
+def sub_pix_corner_detection(img, ids, corners):
+    # Convert image to grayscale
+    gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    
+    # Create corner subpixel detection criteria
+    criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER,
+                100,
+                0.0001
+                )
+
+    # Perform subpixel corner detection
+    for tag in ids:
+        for corner in corners:
+            cv.cornerSubPix(image=gray_img,
+                            corners=corner,
+                            winSize=(2, 2),
+                            zeroZone=(-1, -1),
+                            criteria=criteria
+                            )
+
+    # Return updated corners
+    return corners
+
+
 # Calculate 3D distance between markers
 def get_dist(img, ids, corners, newCamMtx):
-    
+    # Perform sub-pixel corner detection
+    corners = sub_pix_corner_detection(img, ids, corners)
+        
     # Get rotation and translation vectors with respect to marker
     rvecs, tvecs, _ = cv.aruco.estimatePoseSingleMarkers(
         corners,
@@ -90,13 +117,14 @@ if __name__ == '__main__':
                                                       alpha=1,
                                                       newImgSize=(WIDTH, HEIGHT)
                                                       )
-        # Correct image using optimal camera matrix
-        corr_img = cv.undistort(img,
-                                K,
-                                DIST,
-                                None,
-                                newCamMtx
-                                )
+
+# Correct image using optimal camera matrix
+##        corr_img = cv.undistort(img,
+##                                K,
+##                                DIST,
+##                                None,
+##                                newCamMtx
+##                                )
 
         # Detect Aruco marker ids and corners
         corners, ids, _ = cv.aruco.detectMarkers(image=img,
@@ -132,6 +160,7 @@ if __name__ == '__main__':
                     print("Control Distance Difference : ",
                           round(maxDist - minDist, 4), " inches")
 
+
         # Get minimum control distance (Stage 1)
         if gotMin == False:
             if ids is not None:
@@ -156,3 +185,16 @@ if __name__ == '__main__':
         cv.waitKey(1)
         
         rawCapture.truncate(0)
+
+# Debugging: Show detected markers
+##        if ids is not None:
+##            det_img = cv.aruco.drawDetectedMarkers(image=img,
+##                                                   corners=corners,
+##                                                   ids=ids,
+##                                                   borderColor=(0, 0, 255)
+##                                                   )
+##            
+##            det_img = cv.resize(det_img, dim, interpolation=cv.INTER_AREA)
+##
+##            cv.imshow("Detected Markers", det_img)
+##            cv.waitKey(1)
