@@ -1,3 +1,51 @@
+#!/usr/bin/env python
+"""Computer Vision module for Facial Reanimation Device calibration.
+
+REQUIREMENTS AND COMPATIBILITY:
+Requires install of numpy, picamera, time, math, and opencv.
+Built for Raspberry Pi Camera Module v2, but works with any picamera.
+This file uses essential camera calibration data from the
+'CV_CameraCalibrationData.npz' file created by 'CV_CameraCalibration.py'.
+The camera calibration matrices must be updated using the respective file for
+any new camera used.
+
+
+PURPOSE AND METHODS:
+This program uses computer vision techniques and opencv to capture a stream of
+images and detect Aruco markers. In Stage 1, Aruco markers should be placed on
+the control (naturally functioning) side of the face, and resting expression
+should be neutral. When two markers are detected in this state, the 'minimum
+control' distance is calculated between them. For stage 2, expression should
+be changed to the largest smile possible before pressing the space bar to enter
+this stage. When the two Aruco markers are detected again, the 'maximum control'
+distance is calculated. The 'control distance range', and the 'control distance
+difference' are then calculated and printed. ((Final control stage and
+communication with Bluetooth chip functionality are in progress.))
+
+
+INSTRUCTIONS:
+Before you begin: Place two included Aruco markers on the subject's face using
+the provided template.
+
+Stage 1: Subject should sit in front of camera with completely relaxed facial
+expression until the program shows the minimum control distance calculated.
+
+Stage 2: Subject should smile as largely as possible before pressing 'space' to
+continue to Stage 2. Hold this expression until the program shows the maximum
+control distance calculated.
+
+Stage 3: ((Functionality not included / in progress))
+
+
+OUTPUTS:
+The gain and limits necessary to bind the Facial Reanimation Device output to
+the naturale facial range of motion are to be sent to the Facial Reanimation
+Device via Bluetooth. ((This functionality is still in progress.))
+"""
+
+__author__ = "Jackson Apollo Woolery"
+__email__ = "jack.woolery.94@gmail.com"
+
 from picamera.array import PiRGBArray
 from picamera import PiCamera
 import picamera
