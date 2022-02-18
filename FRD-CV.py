@@ -65,7 +65,7 @@ dim = (width_d, height_d)
 
 # Marker length / scaling
 ##MARKER_LENGTH_IN = 4.5 / 25.4 # "5mm Marker"
-MARKER_LENGTH_IN = 0.3 # BS Value
+MARKER_LENGTH_IN = 0.3175 # BS Value
 print("MARKER_LENGTH_IN = ", MARKER_LENGTH_IN)
 
 # Import Aruco marker dictionary
