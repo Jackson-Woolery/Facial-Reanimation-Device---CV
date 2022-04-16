@@ -52,6 +52,13 @@ import picamera
 import cv2 as cv
 import numpy as np
 import math
+import serial
+
+adf = serial.Serial('/dev/ttyUSB0', baudrate=115200, timeout=.1)
+
+# Error tolerance for calibration
+tolerance = 0.1
+
 
 # Image capture dimensions
 WIDTH, HEIGHT = 1920, 1088
@@ -148,6 +155,8 @@ if __name__ == '__main__':
     # Initialize stage statuses
     gotMin = False
     gotMax = False
+    setMin = False
+    setMax = False
 
     # For each frame...
     for frame in camera.capture_continuous(rawCapture,
@@ -183,6 +192,38 @@ if __name__ == '__main__':
 
         # Initialize detected marker count
         count = 0
+
+        if setMin == True:
+            if setMax == False:
+                if ids is not None:
+                    for tag in ids:
+                        count = count + 1
+                        print(count, " tag detected (maxSet)")
+
+                if count >= 2:
+                    currDist, maxSetImg = get_dist(img, ids, corners, newCamMtx)
+                    if currDist < minDist + tolerance * minDist:
+                        # SET THE MAXIMUM ON THE IMPLANT
+                        setMax = True
+
+                        cv.imshow("Max Set Img", maxSetImg)
+                        cv.waitKey(0)
+
+        if gotMax == True:
+            if setMin == False:
+                if ids is not None:
+                    for tag in ids:
+                        count = count + 1
+                        print(count, " tag detected (minSet)")
+
+                if count >= 2:
+                    currDist, minSetImg = get_dist(img, ids, corners, newCamMtx)
+                    if currDist < minDist + tolerance * minDist:
+                        # SET THE MINIMUM ON THE IMPLANT
+                        setMin = True
+
+                        cv.imshow("Min Set Img", minSetImg)
+                        cv.waitKey(0)
 
         # Get maximum control distance (Stage 2)
         if gotMin == True:
