@@ -87,7 +87,7 @@ DIST = KD['dist']
 def sub_pix_corner_detection(img, ids, corners):
     # Convert image to grayscale
     gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    
+
     # Create corner subpixel detection criteria
     criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER,
                 100,
@@ -112,7 +112,7 @@ def sub_pix_corner_detection(img, ids, corners):
 def get_dist(img, ids, corners, newCamMtx):
     # Perform sub-pixel corner detection
     corners = sub_pix_corner_detection(img, ids, corners)
-        
+
     # Get rotation and translation vectors with respect to marker
     rvecs, tvecs, _ = cv.aruco.estimatePoseSingleMarkers(
         corners,
@@ -127,7 +127,7 @@ def get_dist(img, ids, corners, newCamMtx):
 
     # Calculate distance between markers
     distance = math.sqrt((tvec0[0] - tvec1[0]) ** 2 +
-                         (tvec0[1] - tvec1[1]) ** 2 + 
+                         (tvec0[1] - tvec1[1]) ** 2 +
                          (tvec0[2] - tvec1[2]) ** 2
                          )
 
@@ -193,55 +193,68 @@ if __name__ == '__main__':
         # Initialize detected marker count
         count = 0
 
-        if setMin == True:
-            if setMax == False:
+        # Wait to hit target minimum (Stage 4)
+        if setMax == True:
+            if setMin == False:
+                print("STAGE 4: SET MINIMUM")
                 if ids is not None:
                     for tag in ids:
-                        count = count + 1
-                        print(count, " tag detected (maxSet)")
+                        if tag == 2:
+                            count = count + 1
+                            print("Aruco 2 Detected")
+                        if tag == 3:
+                            count = count + 1
+                            print("Aruco 3 Detected")
 
                 if count >= 2:
                     currDist, maxSetImg = get_dist(img, ids, corners, newCamMtx)
                     if currDist < minDist + tolerance * minDist:
-                        # SET THE MAXIMUM ON THE IMPLANT
                         setMax = True
-
                         cv.imshow("Max Set Img", maxSetImg)
                         cv.waitKey(0)
 
-        if gotMax == True:
-            if setMin == False:
+        # Wait to hit target maximum (Stage 3)
+        if gotMin:
+            if not setMax:
                 if ids is not None:
+                    print("STAGE 3: SET MAXIMUM")
                     for tag in ids:
-                        count = count + 1
-                        print(count, " tag detected (minSet)")
+                        if tag == 2:
+                            count = count + 1
+                            print("Aruco 2 Detected")
+                        if tag == 3:
+                            count = count + 1
+                            print("Aruco 3 Detected")
 
                 if count >= 2:
-                    currDist, minSetImg = get_dist(img, ids, corners, newCamMtx)
-                    if currDist < minDist + tolerance * minDist:
-                        # SET THE MINIMUM ON THE IMPLANT
-                        setMin = True
-
-                        cv.imshow("Min Set Img", minSetImg)
+                    currDist, maxSetImg = get_dist(img, ids, corners, newCamMtx)
+                    if currDist >= maxDist:
+                        setMax = True
+                        cv.imshow("Max Set Img", maxSetImg)
                         cv.waitKey(0)
 
         # Get maximum control distance (Stage 2)
-        if gotMin == True:
-            if gotMax == False:
+        if gotMax:
+            if not gotMin:
                 if ids is not None:
+                    print("STAGE 2: GET MINIMUM")
                     for tag in ids:
-                        count = count + 1
-                        print(count, " tag detected (max)")
-                        
+                        if tag == 0:
+                            count = count + 1
+                            print("Aruco 0 Detected")
+                        if tag == 1:
+                            count = count + 1
+                            print("Aruco 1 Detected")
+
                 # When two markers are detected, get distance and show image                        
                 if count >= 2:
-                    maxDist, maxImg = get_dist(img, ids, corners, newCamMtx)
-                    print("Maximum Distance: ", maxDist)
+                    minDist, minImg = get_dist(img, ids, corners, newCamMtx)
+                    print("Minimum Distance: ", minDist)
                     gotMax = True
 
-                    cv.imshow("Max. Control Img", maxImg)
+                    cv.imshow("Min Control Img", minImg)
                     cv.waitKey(0)
-                    
+
                     # Print calibration distance range and difference
                     print("Control Distance Range: ",
                           round(minDist, 4), " - ",
@@ -250,29 +263,34 @@ if __name__ == '__main__':
                           round(maxDist - minDist, 4), " inches")
 
 
-        # Get minimum control distance (Stage 1)
-        if gotMin == False:
+        # Get maximum control distance (Stage 1)
+        if not gotMax:
             if ids is not None:
+                print("STAGE 1: GET MAXIMUM")
                 for tag in ids:
-                    count = count + 1
-                    print(count, " tag detected (min)")
-                    
+                    if tag == 0:
+                        count = count + 1
+                        print("Aruco 0 Detected")
+                    if tag == 1:
+                        count = count + 1
+                        print("Aruco 1 Detected")
+
             # When two markers are detected, get distance and show image        
             if count >= 2:
-                minDist, minImg = get_dist(img, ids, corners, newCamMtx)
-                print("Minimum Distance: ", minDist)
-                gotMin = True
+                maxDist, maxImg = get_dist(img, ids, corners, newCamMtx)
+                print("Maximum Distance: ", maxDist)
+                gotMax = True
 
-                cv.imshow("Min. Control Img", minImg)
+                cv.imshow("Max Control Img", maxImg)
                 cv.waitKey(0)
-                    
+
 
         # Resize and show live stream feed
         resized = cv.resize(img, dim, interpolation = cv.INTER_AREA)
-            
+
         cv.imshow("Stream", resized)
         cv.waitKey(1)
-        
+
         rawCapture.truncate(0)
 
 # Debugging: Show detected markers
