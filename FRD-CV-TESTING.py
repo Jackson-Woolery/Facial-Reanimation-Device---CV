@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 """Computer Vision module for Facial Reanimation Device calibration.
 
@@ -231,11 +230,32 @@ if __name__ == '__main__':
                                                    keepCorners,
                                                    newCamMtx
                                                    )
+
+                    strDist = str(currDist)
+                    cv.putText(img,
+                               strDist,
+                               (5, 50),
+                               cv.FONT_HERSHEY_SIMPLEX,
+                               1,
+                               (0, 0, 255),
+                               2
+                               )
+                    strMin = str(minDist)
+                    cv.putText(img,
+                               strMin,
+                               (5, 100),
+                               cv.FONT_HERSHEY_SIMPLEX,
+                               2,
+                               (0, 0, 255),
+                               2
+                               )
+                    
                     if currDist >= minDist:
-                        setMax = True
+                        setMin = True
                         print("Set Min Distance = ", currDist)
                         cv.imshow("Min Set Img", minSetImg)
                         cv.waitKey(0)
+                        print("CALIBRATION COMPLETE!")
 
         # Wait to hit target maximum (Stage 3)
         if gotMin:
