@@ -149,6 +149,7 @@ if __name__ == '__main__':
     camera = PiCamera()
     camera.resolution = (WIDTH, HEIGHT)
     camera.exposure_mode = 'sports'
+##    camera.awb_mode = 'auto'
     rawCapture = PiRGBArray(camera, size=(WIDTH, HEIGHT))
 
     # Initialize stage statuses
@@ -164,6 +165,7 @@ if __name__ == '__main__':
                                            format="bgr",
                                            use_video_port=True
                                            ):
+##        frame.awb_mode = 'auto'
         # Get image and clear stream
         img = frame.array
         rawCapture.truncate(0)
@@ -202,22 +204,30 @@ if __name__ == '__main__':
         if setMax == True:
             if setMin == False:
                 if ids is not None:
+                    keepCorners = []
                     for tag in ids:
+                        j = 0
                         if tag == 2:
                             count = count + 1
                             print("Aruco 2 Detected")
-                            keepCorners.append(corners[i])
-                            keepIDs.append(ids[i])
+                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            for corner2 in corners:
+                                if j == i:
+                                    keepCorners.append(corner2)
+                                j = j + 1
                         if tag == 3:
                             count = count + 1
                             print("Aruco 3 Detected")
-                            keepCorners.append(corners[i])
-                            keepIDs.append(ids[i])
+                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            for corner3 in corners:
+                                if j == i:
+                                    keepCorners.append(corner3)
+                                j = j + 1
                         i = i + 1
 
                 if count >= 2:
                     currDist, minSetImg = get_dist(img,
-                                                   ids,
+                                                   keepIDs,
                                                    keepCorners,
                                                    newCamMtx
                                                    )
@@ -231,26 +241,30 @@ if __name__ == '__main__':
         if gotMin:
             if not setMax:
                 if ids is not None:
+                    keepCorners = []
                     for tag in ids:
+                        j = 0
                         if tag == 2:
                             count = count + 1
                             print("Aruco 2 Detected")
-                            for corner in corners:
+                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            for corner2 in corners:
                                 if j == i:
-                                    keepCorners.append(corner)
+                                    keepCorners.append(corner2)
                                 j = j + 1
                         if tag == 3:
                             count = count + 1
                             print("Aruco 3 Detected")
-                            for corner in corners:
+                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            for corner3 in corners:
                                 if j == i:
-                                    keepCorners.append(corner)
+                                    keepCorners.append(corner3)
                                 j = j + 1
                         i = i + 1
 
                 if count >= 2:
                     currDist, maxSetImg = get_dist(img,
-                                                   ids,
+                                                   keepIDs,
                                                    keepCorners,
                                                    newCamMtx
                                                    )
@@ -277,21 +291,31 @@ if __name__ == '__main__':
         if gotMax:
             if not gotMin:
                 if ids is not None:
+                    keepCorners = []
                     for tag in ids:
+                        j = 0
                         if tag == 0:
                             count = count + 1
                             print("Aruco 0 Detected")
-                            keepCorners.append(corners[i])
-                        if tag == 1:
+                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            for corner0 in corners:
+                                if j == i:
+                                    keepCorners.append(corner0)
+                                j = j + 1
+                        if tag == 1:                        
                             count = count + 1
                             print("Aruco 1 Detected")
-                            keepCorners.append(corners[i])
+                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            for corner1 in corners:
+                                if j == i:
+                                    keepCorners.append(corner1)
+                                j = j + 1
                         i = i + 1
 
                 # When two markers are detected, get distance and show image                        
                 if count >= 2:
                     minDist, minImg = get_dist(img,
-                                               ids,
+                                               keepIDs,
                                                keepCorners,
                                                newCamMtx
                                                )
@@ -316,36 +340,37 @@ if __name__ == '__main__':
             if ids is not None:
                 keepCorners = []
                 for tag in ids:
-                    print("i: ", i)
+##                    print("i: ", i)
                     j = 0
                     if tag == 0:
                         count = count + 1
                         print("Aruco 0 Detected")
-                        keepIDs.append([tag[0]])
+                        keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
                         for corner0 in corners:
-                            print("j: ", j)
+##                            print("j: ", j)
                             if j == i:
                                 keepCorners.append(corner0)
-                                print("ARUCO 0 CORNER APPEND: ", keepCorners)
+##                                print("ARUCO 0 CORNER APPEND: ", keepCorners)
                             j = j + 1
                     if tag == 1:
                         count = count + 1
                         print("Aruco 1 Detected")
-                        keepIDs.append([tag[0]])
+                        keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
                         for corner1 in corners:
-                            print("j: ", j)
+##                            print("j: ", j)
                             if j == i:
                                 keepCorners.append(corner1)
-                                print("ARUCO 1 CORNER APPEND: ", keepCorners)
+##                                print("ARUCO 1 CORNER APPEND: ", keepCorners)
                             j = j + 1
-                    print("ids: ", ids)
-                    print("keepIDs: ", keepIDs)
-                    print("corners: ", corners)
-                    print("keepCorners: ", keepCorners)
+                    
+##                    print("ids: ", ids)
+##                    print("keepIDs: ", keepIDs)
+##                    print("corners: ", corners)
+##                    print("keepCorners: ", keepCorners)
                     i = i + 1
                     
-            print("----------")
-            print("----------")
+##            print("----------")
+##            print("----------")
 
             # When two markers are detected, get distance and show image        
             if count >= 2:
