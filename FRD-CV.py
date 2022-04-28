@@ -54,8 +54,6 @@ import numpy as np
 import math
 import serial
 
-adf = serial.Serial('/dev/ttyUSB0', baudrate=115200, timeout=.1)
-
 # Error tolerance for calibration
 tolerance = 0.1
 
@@ -73,7 +71,7 @@ dim = (width_d, height_d)
 # Marker length / scaling
 ##MARKER_LENGTH_IN = 4.5 / 25.4 # "5mm Marker"
 MARKER_LENGTH_IN = 0.3175 # BS Value
-print("MARKER_LENGTH_IN = ", MARKER_LENGTH_IN)
+##print("MARKER_LENGTH_IN = ", MARKER_LENGTH_IN)
 
 # Import Aruco marker dictionary
 arucoDict = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_4X4_100)
@@ -150,6 +148,7 @@ if __name__ == '__main__':
     camera = PiCamera()
     camera.resolution = (WIDTH, HEIGHT)
     camera.exposure_mode = 'sports'
+##    camera.awb_mode = 'auto'
     rawCapture = PiRGBArray(camera, size=(WIDTH, HEIGHT))
 
     # Initialize stage statuses
@@ -158,11 +157,14 @@ if __name__ == '__main__':
     setMin = False
     setMax = False
 
+    print("STAGE 1: GET MAXIMUM")
+
     # For each frame...
     for frame in camera.capture_continuous(rawCapture,
                                            format="bgr",
                                            use_video_port=True
                                            ):
+##        frame.awb_mode = 'auto'
         # Get image and clear stream
         img = frame.array
         rawCapture.truncate(0)
@@ -192,67 +194,202 @@ if __name__ == '__main__':
 
         # Initialize detected marker count
         count = 0
+        i = 0
+        j = 0
+        keepIDs = []
+        keepCorners = []
 
         # Wait to hit target minimum (Stage 4)
         if setMax == True:
             if setMin == False:
-                print("STAGE 4: SET MINIMUM")
                 if ids is not None:
+                    keepCorners = []
                     for tag in ids:
+                        j = 0
                         if tag == 2:
                             count = count + 1
-                            print("Aruco 2 Detected")
+##                            print("Aruco 2 Detected")
+                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            for corner2 in corners:
+                                if j == i:
+                                    keepCorners.append(corner2)
+                                j = j + 1
                         if tag == 3:
                             count = count + 1
-                            print("Aruco 3 Detected")
+##                            print("Aruco 3 Detected")
+                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            for corner3 in corners:
+                                if j == i:
+                                    keepCorners.append(corner3)
+                                j = j + 1
+                        i = i + 1
 
                 if count >= 2:
-                    currDist, maxSetImg = get_dist(img, ids, corners, newCamMtx)
-                    if currDist < minDist + tolerance * minDist:
-                        setMax = True
-                        cv.imshow("Max Set Img", maxSetImg)
+                    currDist, minSetImg = get_dist(img,
+                                                   keepIDs,
+                                                   keepCorners,
+                                                   newCamMtx
+                                                   )
+
+                    strDist = str(currDist)
+                    cv.putText(img,
+                               "Current Distance: " + strDist,
+                               (5, 50),
+                               cv.FONT_HERSHEY_SIMPLEX,
+                               2,
+                               (0, 0, 255),
+                               2
+                               )
+                    strMin = str(minDist)
+                    cv.putText(img,
+                               "Control Minimum: " + strMin,
+                               (5, 150),
+                               cv.FONT_HERSHEY_SIMPLEX,
+                               2,
+                               (0, 255, 0),
+                               2
+                               )
+                    
+                    if currDist >= minDist:
+                        setMin = True
+                        cv.putText(minSetImg,
+                                   strDist,
+                                   (5, 60),
+                                   cv.FONT_HERSHEY_SIMPLEX,
+                                   1,
+                                   (0, 0, 255),
+                                   2
+                                   )
+                        cv.putText(minSetImg,
+                                   strMin,
+                                   (5, 30),
+                                   cv.FONT_HERSHEY_SIMPLEX,
+                                   1,
+                                   (0, 255, 0),
+                                   2
+                                   )
+                        print("Set Min Distance = ", currDist)
+                        cv.imshow("Min Set Img", minSetImg)
+                        cv.moveWindow("Min Set Img", 1080, 720)
                         cv.waitKey(0)
+                        print("CALIBRATION COMPLETE!")
+                        
 
         # Wait to hit target maximum (Stage 3)
         if gotMin:
             if not setMax:
                 if ids is not None:
-                    print("STAGE 3: SET MAXIMUM")
+                    keepCorners = []
                     for tag in ids:
+                        j = 0
                         if tag == 2:
                             count = count + 1
-                            print("Aruco 2 Detected")
+##                            print("Aruco 2 Detected")
+                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            for corner2 in corners:
+                                if j == i:
+                                    keepCorners.append(corner2)
+                                j = j + 1
                         if tag == 3:
                             count = count + 1
-                            print("Aruco 3 Detected")
+##                            print("Aruco 3 Detected")
+                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            for corner3 in corners:
+                                if j == i:
+                                    keepCorners.append(corner3)
+                                j = j + 1
+                        i = i + 1
 
                 if count >= 2:
-                    currDist, maxSetImg = get_dist(img, ids, corners, newCamMtx)
-                    if currDist >= maxDist:
+                    currDist, maxSetImg = get_dist(img,
+                                                   keepIDs,
+                                                   keepCorners,
+                                                   newCamMtx
+                                                   )
+                    
+                    strDist = str(currDist)
+                    cv.putText(img,
+                               "Current Distance: " + strDist,
+                               (5, 100),
+                               cv.FONT_HERSHEY_SIMPLEX,
+                               1.5,
+                               (0, 0, 255),
+                               2
+                               )
+                    strMax = str(maxDist)
+                    cv.putText(img,
+                               "Control Max : " + strMax,
+                               (5, 50),
+                               cv.FONT_HERSHEY_SIMPLEX,
+                               1.5,
+                               (0, 255, 0),
+                               2
+                               )
+                    
+                    if currDist <= maxDist:
                         setMax = True
+                        print("Set Max Distance = ", currDist)
+                        strDist = str(currDist)
+                        cv.putText(maxSetImg,
+                                   strDist,
+                                   (5, 60),
+                                   cv.FONT_HERSHEY_SIMPLEX,
+                                   1,
+                                   (0, 0, 255),
+                                   2
+                                   )
+                        strMax = str(maxDist)
+                        cv.putText(maxSetImg,
+                                   strMax,
+                                   (5, 30),
+                                   cv.FONT_HERSHEY_SIMPLEX,
+                                   1,
+                                   (0, 255, 0),
+                                   2
+                                   )
                         cv.imshow("Max Set Img", maxSetImg)
+                        cv.moveWindow("Max Set Img", 1080, 52)
                         cv.waitKey(0)
+
+                        print("STAGE 4: SET MINIMUM")
 
         # Get maximum control distance (Stage 2)
         if gotMax:
             if not gotMin:
                 if ids is not None:
-                    print("STAGE 2: GET MINIMUM")
+                    keepCorners = []
                     for tag in ids:
+                        j = 0
                         if tag == 0:
                             count = count + 1
-                            print("Aruco 0 Detected")
-                        if tag == 1:
+##                            print("Aruco 0 Detected")
+                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            for corner0 in corners:
+                                if j == i:
+                                    keepCorners.append(corner0)
+                                j = j + 1
+                        if tag == 1:                        
                             count = count + 1
-                            print("Aruco 1 Detected")
+##                            print("Aruco 1 Detected")
+                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            for corner1 in corners:
+                                if j == i:
+                                    keepCorners.append(corner1)
+                                j = j + 1
+                        i = i + 1
 
                 # When two markers are detected, get distance and show image                        
                 if count >= 2:
-                    minDist, minImg = get_dist(img, ids, corners, newCamMtx)
+                    minDist, minImg = get_dist(img,
+                                               keepIDs,
+                                               keepCorners,
+                                               newCamMtx
+                                               )
                     print("Minimum Distance: ", minDist)
-                    gotMax = True
+                    gotMin = True
 
                     cv.imshow("Min Control Img", minImg)
+                    cv.moveWindow("Min Control Img", 0, 720)
                     cv.waitKey(0)
 
                     # Print calibration distance range and difference
@@ -262,27 +399,61 @@ if __name__ == '__main__':
                     print("Control Distance Difference : ",
                           round(maxDist - minDist, 4), " inches")
 
+                    print("STAGE 3: SET MAXIMUM")
+
 
         # Get maximum control distance (Stage 1)
         if not gotMax:
             if ids is not None:
-                print("STAGE 1: GET MAXIMUM")
+                keepCorners = []
                 for tag in ids:
+##                    print("i: ", i)
+                    j = 0
                     if tag == 0:
                         count = count + 1
-                        print("Aruco 0 Detected")
+##                        print("Aruco 0 Detected")
+                        keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                        for corner0 in corners:
+##                            print("j: ", j)
+                            if j == i:
+                                keepCorners.append(corner0)
+##                                print("ARUCO 0 CORNER APPEND: ", keepCorners)
+                            j = j + 1
                     if tag == 1:
                         count = count + 1
-                        print("Aruco 1 Detected")
+##                        print("Aruco 1 Detected")
+                        keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                        for corner1 in corners:
+##                            print("j: ", j)
+                            if j == i:
+                                keepCorners.append(corner1)
+##                                print("ARUCO 1 CORNER APPEND: ", keepCorners)
+                            j = j + 1
+                    
+##                    print("ids: ", ids)
+##                    print("keepIDs: ", keepIDs)
+##                    print("corners: ", corners)
+##                    print("keepCorners: ", keepCorners)
+                    i = i + 1
+                    
+##            print("----------")
+##            print("----------")
 
             # When two markers are detected, get distance and show image        
             if count >= 2:
-                maxDist, maxImg = get_dist(img, ids, corners, newCamMtx)
+                maxDist, maxImg = get_dist(img,
+                                           keepIDs,
+                                           keepCorners,
+                                           newCamMtx
+                                           )
                 print("Maximum Distance: ", maxDist)
                 gotMax = True
 
                 cv.imshow("Max Control Img", maxImg)
+                cv.moveWindow("Max Control Img", 0, 52)
                 cv.waitKey(0)
+
+                print("STAGE 2: GET MINIMUM")
 
 
         # Resize and show live stream feed
