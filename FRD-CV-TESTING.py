@@ -233,27 +233,44 @@ if __name__ == '__main__':
 
                     strDist = str(currDist)
                     cv.putText(img,
-                               strDist,
+                               "Current Distance: " + strDist,
                                (5, 50),
-                               cv.FONT_HERSHEY_SIMPLEX,
-                               1,
-                               (0, 0, 255),
-                               2
-                               )
-                    strMin = str(minDist)
-                    cv.putText(img,
-                               strMin,
-                               (5, 100),
                                cv.FONT_HERSHEY_SIMPLEX,
                                2,
                                (0, 0, 255),
                                2
                                )
+                    strMin = str(minDist)
+                    cv.putText(img,
+                               "Control Minimum: " + strMin,
+                               (5, 150),
+                               cv.FONT_HERSHEY_SIMPLEX,
+                               2,
+                               (0, 255, 0),
+                               2
+                               )
                     
                     if currDist >= minDist:
                         setMin = True
+                        cv.putText(minSetImg,
+                                   strDist,
+                                   (5, 60),
+                                   cv.FONT_HERSHEY_SIMPLEX,
+                                   1,
+                                   (0, 0, 255),
+                                   2
+                                   )
+                        cv.putText(minSetImg,
+                                   strMin,
+                                   (5, 30),
+                                   cv.FONT_HERSHEY_SIMPLEX,
+                                   1,
+                                   (0, 255, 0),
+                                   2
+                                   )
                         print("Set Min Distance = ", currDist)
                         cv.imshow("Min Set Img", minSetImg)
+                        cv.moveWindow("Min Set Img", 1080, 720)
                         cv.waitKey(0)
                         print("CALIBRATION COMPLETE!")
 
@@ -292,17 +309,45 @@ if __name__ == '__main__':
                     strDist = str(currDist)
                     cv.putText(img,
                                strDist,
+                               (5, 100),
+                               cv.FONT_HERSHEY_SIMPLEX,
+                               1.5,
+                               (0, 0, 255),
+                               2
+                               )
+                    strMax = str(maxDist)
+                    cv.putText(img,
+                               strMax,
                                (5, 50),
                                cv.FONT_HERSHEY_SIMPLEX,
-                               1,
-                               (0, 0, 255),
+                               1.5,
+                               (0, 255, 0),
                                2
                                )
                     
                     if currDist <= maxDist:
                         setMax = True
                         print("Set Max Distance = ", currDist)
+                        strDist = str(currDist)
+                        cv.putText(maxSetImg,
+                                   strDist,
+                                   (5, 60),
+                                   cv.FONT_HERSHEY_SIMPLEX,
+                                   1,
+                                   (0, 0, 255),
+                                   2
+                                   )
+                        strMax = str(maxDist)
+                        cv.putText(maxSetImg,
+                                   strMax,
+                                   (5, 30),
+                                   cv.FONT_HERSHEY_SIMPLEX,
+                                   1,
+                                   (0, 255, 0),
+                                   2
+                                   )
                         cv.imshow("Max Set Img", maxSetImg)
+                        cv.moveWindow("Max Set Img", 1080, 52)
                         cv.waitKey(0)
 
                         print("STAGE 4: SET MINIMUM")
@@ -343,6 +388,7 @@ if __name__ == '__main__':
                     gotMin = True
 
                     cv.imshow("Min Control Img", minImg)
+                    cv.moveWindow("Min Control Img", 0, 720)
                     cv.waitKey(0)
 
                     # Print calibration distance range and difference
@@ -403,6 +449,7 @@ if __name__ == '__main__':
                 gotMax = True
 
                 cv.imshow("Max Control Img", maxImg)
+                cv.moveWindow("Max Control Img", 0, 52)
                 cv.waitKey(0)
 
                 print("STAGE 2: GET MINIMUM")
