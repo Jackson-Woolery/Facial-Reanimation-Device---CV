@@ -253,7 +253,7 @@ if __name__ == '__main__':
                     if currDist >= minDist:
                         setMin = True
                         cv.putText(minSetImg,
-                                   strDist,
+                                   "Actuated Min Distance: " + strDist,
                                    (5, 60),
                                    cv.FONT_HERSHEY_SIMPLEX,
                                    1,
@@ -261,16 +261,16 @@ if __name__ == '__main__':
                                    2
                                    )
                         cv.putText(minSetImg,
-                                   strMin,
+                                   "Control Min Distance: " + strMin,
                                    (5, 30),
                                    cv.FONT_HERSHEY_SIMPLEX,
                                    1,
                                    (0, 255, 0),
                                    2
                                    )
-                        print("Set Min Distance = ", currDist)
-                        cv.imshow("Min Set Img", minSetImg)
-                        cv.moveWindow("Min Set Img", 1080, 720)
+                        print("Actuated Min Distance = ", currDist)
+                        cv.imshow("Actuated Min Img", minSetImg)
+                        cv.moveWindow("Actuated Min Img", 1080, 720)
                         cv.waitKey(0)
                         print("CALIBRATION COMPLETE!")
                         
@@ -318,7 +318,7 @@ if __name__ == '__main__':
                                )
                     strMax = str(maxDist)
                     cv.putText(img,
-                               "Control Max : " + strMax,
+                               "Control Maximum: " + strMax,
                                (5, 50),
                                cv.FONT_HERSHEY_SIMPLEX,
                                1.5,
@@ -328,10 +328,10 @@ if __name__ == '__main__':
                     
                     if currDist <= maxDist:
                         setMax = True
-                        print("Set Max Distance = ", currDist)
+                        print("Actuated Max Distance: ", currDist)
                         strDist = str(currDist)
                         cv.putText(maxSetImg,
-                                   strDist,
+                                   "Actuated Max Distance: " + strDist,
                                    (5, 60),
                                    cv.FONT_HERSHEY_SIMPLEX,
                                    1,
@@ -340,15 +340,15 @@ if __name__ == '__main__':
                                    )
                         strMax = str(maxDist)
                         cv.putText(maxSetImg,
-                                   strMax,
+                                   "Control Max Distance: " + strMax,
                                    (5, 30),
                                    cv.FONT_HERSHEY_SIMPLEX,
                                    1,
                                    (0, 255, 0),
                                    2
                                    )
-                        cv.imshow("Max Set Img", maxSetImg)
-                        cv.moveWindow("Max Set Img", 1080, 52)
+                        cv.imshow("Actuated Max Img", maxSetImg)
+                        cv.moveWindow("Actuated Max Img", 1080, 52)
                         cv.waitKey(0)
 
                         print("STAGE 4: SET MINIMUM")
