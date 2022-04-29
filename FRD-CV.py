@@ -11,36 +11,75 @@ any new camera used.
 
 
 PURPOSE AND METHODS:
-This program uses computer vision techniques and opencv to capture a stream of
-images and detect Aruco markers. In Stage 1, Aruco markers should be placed on
-the control (naturally functioning) side of the face, and resting expression
-should be neutral. When two markers are detected in this state, the 'minimum
-control' distance is calculated between them. For stage 2, expression should
-be changed to the largest smile possible before pressing the space bar to enter
-this stage. When the two Aruco markers are detected again, the 'maximum control'
-distance is calculated. The 'control distance range', and the 'control distance
-difference' are then calculated and printed. ((Final control stage and
-communication with Bluetooth chip functionality are in progress.))
+The purpose of this program is to demonstrate the capability of a Computer
+Vision module to be used to calibrate the Facial Reanimation Device, as
+designed by the Mines Neuromuscular Mediators. While the final program would
+ideally have wireless communication with the implanted device, and calibrate
+it to create symmetrical maximum and minimum expressions - this program
+functions as a demonstration and proof of concept that it can successfully
+detect the maximum and minimum required, and quickly and accurately detect
+and react when the opposite side of the face has reached these same calibration
+points by saving the matching images and distances.
+
+Methods used include computer vision techniques and opencv to capture a stream
+of images and detect Aruco markers. Three-dimensional data is gathered from
+these markers using openCV, and distances are calculated between them using a
+function which performs trigonometric functions on the translation vectors of
+the Aruco markers detected.
+
+Stages 1 and 2 wait until the correct markers (0 and 1) are detected, and the
+maximum and minimum expressive "control" distances are calculated using the
+aforementioned function. A still image is captured in each stage when the
+correct markers are detected and the measurements are acquired.
+
+Stages 3 and 4 look for markers 2 and 3 on the "actuated" side of the face. In
+theory, these are the stages that would run a wireless feedback control system
+with the implanted device - instructing it to actuate and de-actuate until each
+of the control measurements are matched, at which point this program would flag
+the implanted device to save the current required for each as a maximum and
+minimum. However, for practical purposes of this demonstration program, a person
+with no facial paralysis emulates this actuation and de-actuation by smiling,
+and then relaxing their face in stages 3 and 4 respectively. Live measurements
+are displayed on the stream in these stages, along with the respective control
+measurements so users can see the target distance, and the current distance to
+compare. These measurements are also displayed on the saved stills taken at the
+time of match detection for accuracy comparison.
 
 
 INSTRUCTIONS:
-Before you begin: Place two included Aruco markers on the subject's face using
-the provided template.
+Before you begin: Place 5mm Aruco marker 0 just below the corner of the lip on
+the "control" or healthy side of the face, and Aruco 1 at the peak of the
+zygomatic arch on the same side. Similarly, place Aruco markers 2 and 3 at the
+same locations respectively on the opposite side of the face which will be
+referenced as the "actuated" side of the face.
 
-Stage 1: Subject should sit in front of camera with completely relaxed facial
-expression until the program shows the minimum control distance calculated.
+Stage 1: Subject should sit in front of camera with the largest smile possible
+until the program shows the maximum control distance calculated, and captures
+an image. Ensure that Aruco markers 0 and 1 are within unobstructed view of the
+PiCamera.
 
-Stage 2: Subject should smile as largely as possible before pressing 'space' to
-continue to Stage 2. Hold this expression until the program shows the maximum
-control distance calculated.
+Stage 2: Subject should relax their face as possible before pressing 'space' to
+continue to Stage 2. Hold this expression until the program shows the minimum
+control distance calculated. Ensure that Aruco markers 0 and 1 are within
+unobstructed view of the PiCamera.
 
-Stage 3: ((Functionality not included / in progress))
+Stage 3: Press 'space'. Subject should smile slowly on the "actuated" side until
+the program detects the same expressive distance as the control side and
+captures a still image. Current and control distances will be shown on the
+stream, meanwhile. Ensure that Aruco markers 2 and 3 are within unobstructed
+view of the PiCamera.
+
+Stage 4: Press 'space'. Subject should slowly relax their face on the "actuated"
+side until the program detects the same expressive distance as the control side
+and captures a still image. Current and control distances will be displayed on
+the stream, meanwhile. Ensure that Aruco markers 2 and 3 are within unobstructed
+view of the PiCamera.
 
 
 OUTPUTS:
-The gain and limits necessary to bind the Facial Reanimation Device output to
-the naturale facial range of motion are to be sent to the Facial Reanimation
-Device via Bluetooth. ((This functionality is still in progress.))
+This program outputs images capturing the control and "actuated" maximum and
+minimum expressions. It also prints the expressive distance calculated for
+each image saved.
 """
 
 __author__ = "Jackson Apollo Woolery"
@@ -54,10 +93,6 @@ import numpy as np
 import math
 import serial
 
-# Error tolerance for calibration
-tolerance = 0.1
-
-
 # Image capture dimensions
 WIDTH, HEIGHT = 1920, 1088
 width, height = str(WIDTH), str(HEIGHT)
@@ -69,9 +104,7 @@ height_d = int(HEIGHT * scale)
 dim = (width_d, height_d)
 
 # Marker length / scaling
-##MARKER_LENGTH_IN = 4.5 / 25.4 # "5mm Marker"
-MARKER_LENGTH_IN = 0.3175 # BS Value
-##print("MARKER_LENGTH_IN = ", MARKER_LENGTH_IN)
+MARKER_LENGTH_IN = 0.3175  # BS Value
 
 # Import Aruco marker dictionary
 arucoDict = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_4X4_100)
@@ -80,6 +113,7 @@ arucoDict = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_4X4_100)
 KD = np.load('CV_CameraCalibrationData.npz')
 K = KD['k']
 DIST = KD['dist']
+
 
 # Perform sub-pixel Aruco marker corner detection for increased accuracy
 def sub_pix_corner_detection(img, ids, corners):
@@ -117,7 +151,7 @@ def get_dist(img, ids, corners, newCamMtx):
         markerLength=MARKER_LENGTH_IN,
         cameraMatrix=newCamMtx,
         distCoeffs=0
-        )
+    )
 
     # Extract translation vectors for each marker
     tvec0 = tvecs[0][0]
@@ -148,7 +182,6 @@ if __name__ == '__main__':
     camera = PiCamera()
     camera.resolution = (WIDTH, HEIGHT)
     camera.exposure_mode = 'sports'
-##    camera.awb_mode = 'auto'
     rawCapture = PiRGBArray(camera, size=(WIDTH, HEIGHT))
 
     # Initialize stage statuses
@@ -164,7 +197,6 @@ if __name__ == '__main__':
                                            format="bgr",
                                            use_video_port=True
                                            ):
-##        frame.awb_mode = 'auto'
         # Get image and clear stream
         img = frame.array
         rawCapture.truncate(0)
@@ -177,14 +209,6 @@ if __name__ == '__main__':
                                                       newImgSize=(WIDTH, HEIGHT)
                                                       )
 
-# Correct image using optimal camera matrix
-##        corr_img = cv.undistort(img,
-##                                K,
-##                                DIST,
-##                                None,
-##                                newCamMtx
-##                                )
-
         # Detect Aruco marker ids and corners
         corners, ids, _ = cv.aruco.detectMarkers(image=img,
                                                  dictionary=arucoDict,
@@ -192,7 +216,7 @@ if __name__ == '__main__':
                                                  distCoeff=DIST
                                                  )
 
-        # Initialize detected marker count
+        # Initialize and clear counters
         count = 0
         i = 0
         j = 0
@@ -200,37 +224,38 @@ if __name__ == '__main__':
         keepCorners = []
 
         # Wait to hit target minimum (Stage 4)
-        if setMax == True:
-            if setMin == False:
+        if setMax:
+            if not setMin:
                 if ids is not None:
                     keepCorners = []
                     for tag in ids:
                         j = 0
+                        # Search for correct marker IDs and save only the correct IDs and corners
+                        # Counter is incremented in order to tell when both correct markers are detected
                         if tag == 2:
                             count = count + 1
-##                            print("Aruco 2 Detected")
-                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            keepIDs = np.append(keepIDs, [tag[0]], axis=0)
                             for corner2 in corners:
                                 if j == i:
                                     keepCorners.append(corner2)
                                 j = j + 1
                         if tag == 3:
                             count = count + 1
-##                            print("Aruco 3 Detected")
-                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            keepIDs = np.append(keepIDs, [tag[0]], axis=0)
                             for corner3 in corners:
                                 if j == i:
                                     keepCorners.append(corner3)
                                 j = j + 1
                         i = i + 1
 
+                # If both correct markers are detected...
                 if count >= 2:
+                    # Calculate and display current distance on the stream in red
                     currDist, minSetImg = get_dist(img,
                                                    keepIDs,
                                                    keepCorners,
                                                    newCamMtx
                                                    )
-
                     strDist = str(currDist)
                     cv.putText(img,
                                "Current Distance: " + strDist,
@@ -240,6 +265,7 @@ if __name__ == '__main__':
                                (0, 0, 255),
                                2
                                )
+                    # Display the Minimum Control Distance on the stream in green
                     strMin = str(minDist)
                     cv.putText(img,
                                "Control Minimum: " + strMin,
@@ -249,9 +275,12 @@ if __name__ == '__main__':
                                (0, 255, 0),
                                2
                                )
-                    
+
+                    # If the current distance has reached the (minimum) calibration point...
                     if currDist >= minDist:
                         setMin = True
+                        # Print the "Actuated" maximum distanced saved, and display it on the saved image in red
+                        print("Actuated Min Distance: ", currDist)
                         cv.putText(minSetImg,
                                    "Actuated Min Distance: " + strDist,
                                    (5, 60),
@@ -260,6 +289,7 @@ if __name__ == '__main__':
                                    (0, 0, 255),
                                    2
                                    )
+                        # Display the minimum control distance on the saved image in green
                         cv.putText(minSetImg,
                                    "Control Min Distance: " + strMin,
                                    (5, 30),
@@ -268,12 +298,12 @@ if __name__ == '__main__':
                                    (0, 255, 0),
                                    2
                                    )
-                        print("Actuated Min Distance = ", currDist)
+                        # Show the Actuated Minimum Image at the bottom right of the display
                         cv.imshow("Actuated Min Img", minSetImg)
                         cv.moveWindow("Actuated Min Img", 1080, 720)
                         cv.waitKey(0)
+                        # Calibration is complete
                         print("CALIBRATION COMPLETE!")
-                        
 
         # Wait to hit target maximum (Stage 3)
         if gotMin:
@@ -282,31 +312,32 @@ if __name__ == '__main__':
                     keepCorners = []
                     for tag in ids:
                         j = 0
+                        # Search for correct marker IDs and save only the correct IDs and corners
+                        # Counter is incremented in order to tell when both correct markers are detected
                         if tag == 2:
                             count = count + 1
-##                            print("Aruco 2 Detected")
-                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            keepIDs = np.append(keepIDs, [tag[0]], axis=0)
                             for corner2 in corners:
                                 if j == i:
                                     keepCorners.append(corner2)
                                 j = j + 1
                         if tag == 3:
                             count = count + 1
-##                            print("Aruco 3 Detected")
-                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            keepIDs = np.append(keepIDs, [tag[0]], axis=0)
                             for corner3 in corners:
                                 if j == i:
                                     keepCorners.append(corner3)
                                 j = j + 1
                         i = i + 1
 
+                # If both correct markers are detected...
                 if count >= 2:
+                    # Calculate and display current distance on the stream in red
                     currDist, maxSetImg = get_dist(img,
                                                    keepIDs,
                                                    keepCorners,
                                                    newCamMtx
                                                    )
-                    
                     strDist = str(currDist)
                     cv.putText(img,
                                "Current Distance: " + strDist,
@@ -316,6 +347,7 @@ if __name__ == '__main__':
                                (0, 0, 255),
                                2
                                )
+                    # Display the Maximum Control Distance on the stream in green
                     strMax = str(maxDist)
                     cv.putText(img,
                                "Control Maximum: " + strMax,
@@ -325,9 +357,11 @@ if __name__ == '__main__':
                                (0, 255, 0),
                                2
                                )
-                    
+
+                    # If the current distance has reached the calibration (maximum) point...
                     if currDist <= maxDist:
                         setMax = True
+                        # Print the "Actuated" maximum distanced saved, and display it on the saved image in red
                         print("Actuated Max Distance: ", currDist)
                         strDist = str(currDist)
                         cv.putText(maxSetImg,
@@ -339,6 +373,7 @@ if __name__ == '__main__':
                                    2
                                    )
                         strMax = str(maxDist)
+                        # Display the maximum control distance on the saved image in green
                         cv.putText(maxSetImg,
                                    "Control Max Distance: " + strMax,
                                    (5, 30),
@@ -347,10 +382,11 @@ if __name__ == '__main__':
                                    (0, 255, 0),
                                    2
                                    )
+                        # Show the Actuated Maximum Image at the top right of the display
                         cv.imshow("Actuated Max Img", maxSetImg)
                         cv.moveWindow("Actuated Max Img", 1080, 52)
                         cv.waitKey(0)
-
+                        # Proceed to Stage 4
                         print("STAGE 4: SET MINIMUM")
 
         # Get maximum control distance (Stage 2)
@@ -360,26 +396,27 @@ if __name__ == '__main__':
                     keepCorners = []
                     for tag in ids:
                         j = 0
+                        # Search for correct marker IDs and save only the correct IDs and corners
+                        # Counter is incremented in order to tell when both correct markers are detected
                         if tag == 0:
                             count = count + 1
-##                            print("Aruco 0 Detected")
-                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            keepIDs = np.append(keepIDs, [tag[0]], axis=0)
                             for corner0 in corners:
                                 if j == i:
                                     keepCorners.append(corner0)
                                 j = j + 1
-                        if tag == 1:                        
+                        if tag == 1:
                             count = count + 1
-##                            print("Aruco 1 Detected")
-                            keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                            keepIDs = np.append(keepIDs, [tag[0]], axis=0)
                             for corner1 in corners:
                                 if j == i:
                                     keepCorners.append(corner1)
                                 j = j + 1
                         i = i + 1
 
-                # When two markers are detected, get distance and show image                        
+                # If both correct markers are detected...
                 if count >= 2:
+                    # Calculate and print distance
                     minDist, minImg = get_dist(img,
                                                keepIDs,
                                                keepCorners,
@@ -387,7 +424,7 @@ if __name__ == '__main__':
                                                )
                     print("Minimum Distance: ", minDist)
                     gotMin = True
-
+                    # Show Minimum Control Image at the bottom left of the display
                     cv.imshow("Min Control Img", minImg)
                     cv.moveWindow("Min Control Img", 0, 720)
                     cv.waitKey(0)
@@ -399,48 +436,36 @@ if __name__ == '__main__':
                     print("Control Distance Difference : ",
                           round(maxDist - minDist, 4), " inches")
 
+                    # Proceed to Stage 3
                     print("STAGE 3: SET MAXIMUM")
-
 
         # Get maximum control distance (Stage 1)
         if not gotMax:
             if ids is not None:
                 keepCorners = []
                 for tag in ids:
-##                    print("i: ", i)
                     j = 0
+                    # Search for correct marker IDs and save only the correct IDs and corners
+                    # Counter is incremented in order to tell when both correct markers are detected
                     if tag == 0:
                         count = count + 1
-##                        print("Aruco 0 Detected")
-                        keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                        keepIDs = np.append(keepIDs, [tag[0]], axis=0)
                         for corner0 in corners:
-##                            print("j: ", j)
                             if j == i:
                                 keepCorners.append(corner0)
-##                                print("ARUCO 0 CORNER APPEND: ", keepCorners)
                             j = j + 1
                     if tag == 1:
                         count = count + 1
-##                        print("Aruco 1 Detected")
-                        keepIDs = np.append(keepIDs, [tag[0]], axis = 0)
+                        keepIDs = np.append(keepIDs, [tag[0]], axis=0)
                         for corner1 in corners:
-##                            print("j: ", j)
                             if j == i:
                                 keepCorners.append(corner1)
-##                                print("ARUCO 1 CORNER APPEND: ", keepCorners)
                             j = j + 1
-                    
-##                    print("ids: ", ids)
-##                    print("keepIDs: ", keepIDs)
-##                    print("corners: ", corners)
-##                    print("keepCorners: ", keepCorners)
                     i = i + 1
-                    
-##            print("----------")
-##            print("----------")
 
-            # When two markers are detected, get distance and show image        
+            # If both correct markers are detected...
             if count >= 2:
+                # Calculate and print distance
                 maxDist, maxImg = get_dist(img,
                                            keepIDs,
                                            keepCorners,
@@ -448,31 +473,16 @@ if __name__ == '__main__':
                                            )
                 print("Maximum Distance: ", maxDist)
                 gotMax = True
-
+                # Show Maximum Control Image at the top left of the display
                 cv.imshow("Max Control Img", maxImg)
                 cv.moveWindow("Max Control Img", 0, 52)
                 cv.waitKey(0)
-
+                # Proceed to Stage 2
                 print("STAGE 2: GET MINIMUM")
 
-
         # Resize and show live stream feed
-        resized = cv.resize(img, dim, interpolation = cv.INTER_AREA)
-
+        resized = cv.resize(img, dim, interpolation=cv.INTER_AREA)
         cv.imshow("Stream", resized)
         cv.waitKey(1)
 
         rawCapture.truncate(0)
-
-# Debugging: Show detected markers
-##        if ids is not None:
-##            det_img = cv.aruco.drawDetectedMarkers(image=img,
-##                                                   corners=corners,
-##                                                   ids=ids,
-##                                                   borderColor=(0, 0, 255)
-##                                                   )
-##            
-##            det_img = cv.resize(det_img, dim, interpolation=cv.INTER_AREA)
-##
-##            cv.imshow("Detected Markers", det_img)
-##            cv.waitKey(1)
